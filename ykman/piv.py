@@ -185,7 +185,7 @@ def _dummy_key(key_type):
     raise ValueError("Invalid algorithm")
 
 
-def derive_management_key(pin: str, salt: bytes) -> bytes:
+def derive_management_key(pin: str, salt: bytes, iterations: int = 10000) -> bytes:
     """Derive a management key from the users PIN and a salt.
 
     NOTE: This method of derivation is deprecated! Protect the management key using
@@ -193,8 +193,14 @@ def derive_management_key(pin: str, salt: bytes) -> bytes:
 
     :param pin: The PIN.
     :param salt: The salt.
+    :param iterations: The number of PBKDF2 iterations (defaults to 10000 for legacy compatibility).
     """
-    kdf = PBKDF2HMAC(hashes.SHA1(), 24, salt, 10000, default_backend())  # noqa: S303
+    warnings.warn(
+        "derive_management_key is deprecated, protect the management key using PivmanProtectedData instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    kdf = PBKDF2HMAC(hashes.SHA1(), 24, salt, iterations, default_backend())  # noqa: S303
     return kdf.derive(pin.encode("utf-8"))
 
 
