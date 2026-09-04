@@ -68,6 +68,8 @@ class Settings(dict):
             conf_dir.mkdir(0o700, parents=True)
         with self.fname.open("w") as fd:
             json.dump(self, fd, indent=2)
+        if os.name == "posix":
+            self.fname.chmod(0o600)
 
     __hash__ = None
 
