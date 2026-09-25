@@ -690,14 +690,13 @@ def generate_key(
     SLOT        PIV slot of the private key
     PUBLIC-KEY  file containing the generated public key (use '-' to use stdout)
     """
+    ensure_restrictive_file_mode(public_key_output)
 
     if ctx.obj["fips_unready"]:
         raise CliFail(
             "YubiKey FIPS must be in FIPS approved mode prior to key generation."
         )
     _check_key_support_fips(ctx, algorithm, pin_policy)
-
-    ensure_restrictive_file_mode(public_key_output)
 
     session = ctx.obj["session"]
     _ensure_authenticated(ctx, pin, management_key)
@@ -1257,6 +1256,8 @@ def generate_certificate_signing_request(
     PUBLIC-KEY  file containing a public key (use '-' to use stdin)
     CSR         file to write CSR to (use '-' to use stdout)
     """
+    ensure_restrictive_file_mode(csr_output)
+
     session = ctx.obj["session"]
     pivman = ctx.obj["pivman_data"]
 
@@ -1282,8 +1283,6 @@ def generate_certificate_signing_request(
 
     # This verifies PIN, make sure next action is sign
     _verify_pin(ctx, session, pivman, pin)
-
-    ensure_restrictive_file_mode(csr_output)
 
     try:
         with prompt_timeout(timeout=timeout):
