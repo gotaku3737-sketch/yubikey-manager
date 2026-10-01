@@ -306,6 +306,7 @@ def import_key(ctx, key, input, password, replace_kvn):
         return
 
     file = click.File("rb").convert(input, None, ctx)
+    ensure_restrictive_file_mode(file)
     data = file.read()
     if key.kid in (ScpKid.SCP11a, ScpKid.SCP11b, ScpKid.SCP11c):
         # Expect a private key
