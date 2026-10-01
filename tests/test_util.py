@@ -501,6 +501,30 @@ def test_ensure_restrictive_file_mode_hsmauth_import(tmp_path):
         assert stat.S_IMODE(mode) == 0o600
 
 
+def test_ensure_restrictive_file_mode_securitydomain_import(tmp_path):
+    import os
+    import stat
+    from click.testing import CliRunner
+    from ykman._cli.securitydomain import import_key
+
+    privkey_file = tmp_path / "privkey.pem"
+    privkey_file.write_text("dummy key material")
+    if os.name == "posix":
+        os.chmod(privkey_file, 0o644)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        import_key,
+        ["SCP11a", "1", str(privkey_file)],
+        obj={"authenticated": True, "session": None},
+    )
+
+    assert result.exit_code != 0
+    if os.name == "posix":
+        mode = privkey_file.stat().st_mode
+        assert stat.S_IMODE(mode) == 0o600
+
+
 def test_ensure_restrictive_file_mode_click_file(tmp_path):
     import os
     import stat
