@@ -702,6 +702,7 @@ def import_pskc(ctx, import_file, touch, force, password, remember):
     which case all valid credentials will be added without prompting, overwriting
     any existing accounts with the same name.
     """
+    ensure_restrictive_file_mode(import_file)
     pskc = PSKC(import_file)
     if pskc.encryption.is_encrypted:
         if pskc.encryption.derivation.algorithm:
