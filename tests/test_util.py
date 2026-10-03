@@ -261,6 +261,30 @@ def test_ensure_restrictive_file_mode(tmp_path):
         assert stat.S_IMODE(mode) == 0o600
 
 
+def test_openpgp_import_certificate_file_mode_on_error(tmp_path):
+    import os
+    import stat
+    from click.testing import CliRunner
+    from ykman._cli.openpgp import import_certificate
+
+    cert_file = tmp_path / "cert.pem"
+    cert_file.write_text("dummy certificate content")
+    if os.name == "posix":
+        os.chmod(cert_file, 0o644)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        import_certificate,
+        ["att", str(cert_file)],
+        obj={"session": None},
+    )
+
+    assert result.exit_code != 0
+    if os.name == "posix":
+        mode = cert_file.stat().st_mode
+        assert stat.S_IMODE(mode) == 0o600
+
+
 def test_oath_import_pskc_file_mode_on_error(tmp_path):
     import os
     import stat
