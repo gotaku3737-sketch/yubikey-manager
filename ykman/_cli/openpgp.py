@@ -644,6 +644,8 @@ def import_certificate(ctx, key, cert, admin_pin):
     KEY          key slot to import certificate to (sig, dec, aut, or att)
     CERTIFICATE  file containing the certificate (use '-' to use stdin)
     """
+    ensure_restrictive_file_mode(cert)
+
     session = ctx.obj["session"]
 
     if admin_pin is None:
