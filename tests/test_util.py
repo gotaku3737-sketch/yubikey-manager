@@ -261,6 +261,29 @@ def test_ensure_restrictive_file_mode(tmp_path):
         assert stat.S_IMODE(mode) == 0o600
 
 
+def test_scp_cred_file_mode_on_error(tmp_path):
+    import os
+    import stat
+    from click.testing import CliRunner
+    from ykman._cli.__main__ import cli
+
+    key_file = tmp_path / "scp_key.pem"
+    key_file.write_text("dummy scp private key")
+    if os.name == "posix":
+        os.chmod(key_file, 0o644)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["--scp", str(key_file), "info"],
+    )
+
+    assert result.exit_code != 0
+    if os.name == "posix":
+        mode = key_file.stat().st_mode
+        assert stat.S_IMODE(mode) == 0o600
+
+
 def test_openpgp_import_certificate_file_mode_on_error(tmp_path):
     import os
     import stat

@@ -83,6 +83,7 @@ from .util import (
     YkmanContextObject,
     click_group,
     click_prompt,
+    ensure_restrictive_file_mode,
     find_scp11_params,
     organize_scp11_certificates,
     pretty_print,
@@ -447,7 +448,10 @@ def cli(
                 scp11_creds = None
             else:
                 f = click.File("rb")
-                scp11_creds = [f.convert(fn, None, ctx).read() for fn in scp_cred]
+                scp11_files = [f.convert(fn, None, ctx) for fn in scp_cred]
+                for fobj in scp11_files:
+                    ensure_restrictive_file_mode(fobj)
+                scp11_creds = [fobj.read() for fobj in scp11_files]
                 scp03_keys = None
 
             if not scp_kid:
