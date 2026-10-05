@@ -377,6 +377,30 @@ def test_piv_import_key_file_mode_on_error(tmp_path):
         assert stat.S_IMODE(mode) == 0o600
 
 
+def test_piv_import_certificate_file_mode_on_error(tmp_path):
+    import os
+    import stat
+    from click.testing import CliRunner
+    from ykman._cli.piv import import_certificate
+
+    cert_file = tmp_path / "cert.pem"
+    cert_file.write_text("dummy cert material")
+    if os.name == "posix":
+        os.chmod(cert_file, 0o644)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        import_certificate,
+        ["9a", str(cert_file)],
+        obj={"session": None},
+    )
+
+    assert result.exit_code != 0
+    if os.name == "posix":
+        mode = cert_file.stat().st_mode
+        assert stat.S_IMODE(mode) == 0o600
+
+
 def test_openpgp_import_key_file_mode_on_error(tmp_path):
     import os
     import stat
