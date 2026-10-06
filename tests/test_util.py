@@ -261,6 +261,29 @@ def test_ensure_restrictive_file_mode(tmp_path):
         assert stat.S_IMODE(mode) == 0o600
 
 
+def test_ensure_restrictive_file_mode_scp_ca(tmp_path):
+    import os
+    import stat
+    from click.testing import CliRunner
+    from ykman._cli.__main__ import cli
+
+    ca_file = tmp_path / "ca.crt"
+    ca_file.write_text("dummy ca content")
+    if os.name == "posix":
+        os.chmod(ca_file, 0o644)
+
+    runner = CliRunner()
+    runner.invoke(
+        cli,
+        ["--scp-ca", str(ca_file), "info"],
+        obj={},
+    )
+
+    if os.name == "posix":
+        mode = ca_file.stat().st_mode
+        assert stat.S_IMODE(mode) == 0o600
+
+
 def test_scp_cred_file_mode_on_error(tmp_path):
     import os
     import stat
