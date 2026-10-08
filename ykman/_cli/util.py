@@ -354,6 +354,14 @@ def ensure_restrictive_file_mode(f) -> None:
     """Ensure that file f has restrictive permissions (0o600) on POSIX platforms."""
     if os.name == "posix" and not _is_stdout(f):
         try:
+            if hasattr(f, "flush"):
+                try:
+                    f.flush()
+                except Exception:
+                    logger.debug(
+                        "Failed to flush file stream before setting permissions",
+                        exc_info=True,
+                    )
             fd = f.fileno()
             if stat.S_ISREG(os.fstat(fd).st_mode):
                 if hasattr(os, "fchmod"):
