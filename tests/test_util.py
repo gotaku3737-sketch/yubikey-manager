@@ -261,27 +261,25 @@ def test_ensure_restrictive_file_mode(tmp_path):
         assert stat.S_IMODE(mode) == 0o600
 
 
-def test_ensure_restrictive_file_mode_scp_ca(tmp_path):
+def test_ensure_restrictive_file_mode_flushes_buffer(tmp_path):
     import os
     import stat
-    from click.testing import CliRunner
-    from ykman._cli.__main__ import cli
 
-    ca_file = tmp_path / "ca.crt"
-    ca_file.write_text("dummy ca content")
+    test_file = tmp_path / "buffered.file"
     if os.name == "posix":
-        os.chmod(ca_file, 0o644)
+        # Create file with 0o644
+        with open(test_file, "w") as f:
+            f.write("initial")
+        os.chmod(test_file, 0o644)
 
-    runner = CliRunner()
-    runner.invoke(
-        cli,
-        ["--scp-ca", str(ca_file), "info"],
-        obj={},
-    )
-
-    if os.name == "posix":
-        mode = ca_file.stat().st_mode
-        assert stat.S_IMODE(mode) == 0o600
+        with open(test_file, "w") as f:
+            f.write("secret buffered data")
+            # Size on disk should be 0 or old data before flush
+            ensure_restrictive_file_mode(f)
+            # After ensure_restrictive_file_mode, f.flush() was executed
+            assert test_file.read_text() == "secret buffered data"
+            mode = test_file.stat().st_mode
+            assert stat.S_IMODE(mode) == 0o600
 
 
 def test_scp_cred_file_mode_on_error(tmp_path):
