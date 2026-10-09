@@ -238,8 +238,6 @@ def generate_key(ctx, key, public_key_output, replace_kvn):
     """
     ensure_restrictive_file_mode(public_key_output)
 
-    ensure_restrictive_file_mode(public_key_output)
-
     _require_auth(ctx)
     valid = (ScpKid.SCP11a, ScpKid.SCP11b, ScpKid.SCP11c)
     if key.kid not in valid:
