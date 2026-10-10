@@ -435,6 +435,7 @@ def cli(
                     raise CliFail(f"Invalid KID for card certificate: {scp_kid}.")
 
             if scp_ca:
+                ensure_restrictive_file_mode(scp_ca)
                 ca = scp_ca.read()
             else:
                 ca = None
