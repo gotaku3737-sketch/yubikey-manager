@@ -261,6 +261,32 @@ def test_ensure_restrictive_file_mode(tmp_path):
         assert stat.S_IMODE(mode) == 0o600
 
 
+def test_secret_key_prompts_hide_input(monkeypatch):
+    import ykman._cli.oath as oath_module
+    import ykman._cli.hsmauth as hsmauth_module
+
+    prompts = []
+
+    def mock_click_prompt(prompt, **kwargs):
+        prompts.append((prompt, kwargs))
+        if "secret key" in prompt.lower():
+            return "abba"
+        if "enc key" in prompt.lower():
+            return "01020304050607080102030405060708"
+        return "dummy"
+
+    monkeypatch.setattr(oath_module, "click_prompt", mock_click_prompt)
+    monkeypatch.setattr(hsmauth_module, "click_prompt", mock_click_prompt)
+
+    # Test hsmauth symmetric key prompt
+    key = hsmauth_module._prompt_symmetric_key("ENC key")
+    assert key == bytes.fromhex("01020304050607080102030405060708")
+
+    # Verify hide_input=True was passed to click_prompt
+    assert len(prompts) == 1
+    assert prompts[0][1].get("hide_input") is True
+
+
 def test_ensure_restrictive_file_mode_flushes_buffer(tmp_path):
     import os
     import stat

@@ -580,7 +580,7 @@ def add(
 
     if not secret:
         while True:
-            secret = click_prompt("Enter a secret key (base32)")
+            secret = click_prompt("Enter a secret key (base32)", hide_input=True)
             try:
                 secret = parse_b32_key(secret)
                 break

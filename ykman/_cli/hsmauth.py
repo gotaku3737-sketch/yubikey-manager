@@ -189,7 +189,7 @@ def _prompt_credential_password(prompt="Enter credential password", confirm=Fals
 
 
 def _prompt_symmetric_key(name):
-    symmetric_key = click_prompt(f"Enter {name}")
+    symmetric_key = click_prompt(f"Enter {name}", hide_input=True)
 
     return _parse_key(
         symmetric_key, ALGORITHM.AES128_YUBICO_AUTHENTICATION.key_len, name
