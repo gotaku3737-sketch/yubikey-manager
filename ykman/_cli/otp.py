@@ -660,7 +660,7 @@ def chalresp(ctx, slot, key, totp, touch, force, generate):
                 except Exception as e:
                     click.echo(e)
         else:
-            key = click_prompt("Enter a secret key")
+            key = click_prompt("Enter a secret key", hide_input=True)
             key = parse_oath_key(key)
 
     cred_type = "TOTP" if totp else "challenge-response"
