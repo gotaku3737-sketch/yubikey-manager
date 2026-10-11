@@ -264,6 +264,7 @@ def test_ensure_restrictive_file_mode(tmp_path):
 def test_secret_key_prompts_hide_input(monkeypatch):
     import ykman._cli.oath as oath_module
     import ykman._cli.hsmauth as hsmauth_module
+    import ykman._cli.otp as otp_module
 
     prompts = []
 
@@ -277,14 +278,32 @@ def test_secret_key_prompts_hide_input(monkeypatch):
 
     monkeypatch.setattr(oath_module, "click_prompt", mock_click_prompt)
     monkeypatch.setattr(hsmauth_module, "click_prompt", mock_click_prompt)
+    monkeypatch.setattr(otp_module, "click_prompt", mock_click_prompt)
 
     # Test hsmauth symmetric key prompt
     key = hsmauth_module._prompt_symmetric_key("ENC key")
     assert key == bytes.fromhex("01020304050607080102030405060708")
 
-    # Verify hide_input=True was passed to click_prompt
-    assert len(prompts) == 1
-    assert prompts[0][1].get("hide_input") is True
+    # Test otp chalresp interactive secret key prompt via click runner
+    from click.testing import CliRunner
+    from unittest.mock import MagicMock
+    runner = CliRunner()
+    mock_info = MagicMock()
+    mock_info.version = (5, 4, 3)
+    mock_session = MagicMock()
+    monkeypatch.setattr(otp_module, "_get_session", lambda ctx, types=None: mock_session)
+    runner.invoke(
+        otp_module.chalresp,
+        ["2"],
+        obj={"device": MagicMock(), "info": mock_info, "access_code": None},
+        catch_exceptions=False,
+    )
+
+    # Verify hide_input=True was passed to click_prompt for both
+    assert len(prompts) >= 2
+    for prompt_str, kwargs in prompts:
+        if "secret key" in prompt_str.lower() or "enc key" in prompt_str.lower():
+            assert kwargs.get("hide_input") is True
 
 
 def test_ensure_restrictive_file_mode_flushes_buffer(tmp_path):
