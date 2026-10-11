@@ -489,7 +489,7 @@ def yubiotp(
                 "add the --generate-private-id flag or --private-id option."
             )
         else:
-            private_id = click_prompt("Enter private ID")
+            private_id = click_prompt("Enter private ID", hide_input=True)
             private_id = bytes.fromhex(private_id)
 
     if not key:
@@ -502,7 +502,7 @@ def yubiotp(
                 "add the --generate-key flag or --key option."
             )
         else:
-            key = click_prompt("Enter secret key")
+            key = click_prompt("Enter secret key", hide_input=True)
             key = bytes.fromhex(key)
 
     if not force:
@@ -575,7 +575,7 @@ def static(ctx, slot, password, generate, length, keyboard_layout, enter, force)
         raise CliFail("Provide a length for the generated password.")
 
     if not password and not generate:
-        password = click_prompt("Enter a static password")
+        password = click_prompt("Enter a static password", hide_input=True)
     elif not password and generate:
         password = generate_static_pw(length, keyboard_layout)
 
@@ -653,14 +653,14 @@ def chalresp(ctx, slot, key, totp, touch, force, generate):
                 click.echo(f"Using a randomly generated key (hex): {key.hex()}")
         elif totp:
             while True:
-                key = click_prompt("Enter a secret key (base32)")
+                key = click_prompt("Enter a secret key (base32)", hide_input=True)
                 try:
                     key = parse_b32_key(key)
                     break
                 except Exception as e:
                     click.echo(e)
         else:
-            key = click_prompt("Enter a secret key")
+            key = click_prompt("Enter a secret key", hide_input=True)
             key = parse_oath_key(key)
 
     cred_type = "TOTP" if totp else "challenge-response"
@@ -827,7 +827,7 @@ def hotp(ctx, slot, key, digits, counter, identifier, enter, force):
 
     if not key:
         while True:
-            key = click_prompt("Enter a secret key (base32)")
+            key = click_prompt("Enter a secret key (base32)", hide_input=True)
             try:
                 key = parse_b32_key(key)
                 break
