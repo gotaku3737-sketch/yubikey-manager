@@ -143,3 +143,63 @@ def test_oath_keystore_error_handling(monkeypatch):
     assert res.exit_code != 0
     assert isinstance(res.exception, CliFail)
     assert "Failed to remember password, the keyring is locked or unavailable." in str(res.exception)
+
+
+def test_import_pskc_preshared_key_prompt_hidden_input(monkeypatch, tmp_path):
+    from unittest.mock import MagicMock
+    from click.testing import CliRunner
+    from ykman._cli.__main__ import cli
+
+    pskc_file = tmp_path / "encrypted.pskc"
+    pskc_file.write_bytes(b"dummy_pskc_content")
+
+    mock_key = MagicMock()
+    mock_key.algorithm = "urn:ietf:params:xml:ns:keyprov:pskc:totp"
+    mock_key.secret = b"secretkey"
+    mock_key.id = "test_key"
+    mock_key.friendly_name = None
+    mock_key.issuer = None
+    mock_key.key_userid = None
+    mock_key.time_interval = 30
+    mock_key.response_length = 6
+    mock_key.algorithm_suite = "sha1"
+    mock_key.counter = None
+
+    mock_pskc = MagicMock()
+    mock_pskc.encryption.is_encrypted = True
+    mock_pskc.encryption.derivation.algorithm = None
+    mock_pskc.keys = [mock_key]
+
+    mock_click_prompt = MagicMock(return_value="00112233445566778899aabbccddeeff")
+
+    mock_session = MagicMock()
+    mock_session.locked = False
+    mock_session.device_id = "test_device_id"
+    mock_session.version = (5, 4, 0)
+    mock_session.list_credentials.return_value = []
+
+    mock_info = MagicMock()
+    mock_info.fips_capable = ()
+    mock_info.fips_approved = ()
+
+    mock_dev = MagicMock()
+    mock_conn = MagicMock()
+    mock_dev.open_connection.return_value = mock_conn
+
+    monkeypatch.setattr("ykman._cli.oath.PSKC", lambda f: mock_pskc)
+    monkeypatch.setattr("ykman._cli.oath.click_prompt", mock_click_prompt)
+    monkeypatch.setattr("ykman._cli.__main__.require_device", lambda conn, serial: (mock_dev, mock_info))
+    monkeypatch.setattr("ykman._cli.oath.OathSession", lambda conn, scp: mock_session)
+
+    runner = CliRunner()
+    res = runner.invoke(
+        cli,
+        ["oath", "accounts", "import", str(pskc_file)],
+        input="y\n",
+    )
+
+    assert res.exit_code == 0
+    mock_click_prompt.assert_called_once_with(
+        "Enter pre-shared key (32 char hex) to decrypt PSKC file",
+        hide_input=True,
+    )
