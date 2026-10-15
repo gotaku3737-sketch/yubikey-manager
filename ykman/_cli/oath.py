@@ -668,7 +668,8 @@ def uri(ctx, data, touch, force, password, remember):
 
     if not data:
         while True:
-            uri = click_prompt("Enter an OATH URI (otpauth://)")
+            # Mask sensitive URI input containing secret keys
+            uri = click_prompt("Enter an OATH URI (otpauth://)", hide_input=True)
             try:
                 data = CredentialData.parse_uri(uri)
                 break
