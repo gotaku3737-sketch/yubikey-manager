@@ -261,6 +261,32 @@ def test_ensure_restrictive_file_mode(tmp_path):
         assert stat.S_IMODE(mode) == 0o600
 
 
+def test_oath_uri_prompt_hide_input(monkeypatch):
+    import ykman._cli.oath as oath_module
+    from click.testing import CliRunner
+
+    prompts = []
+
+    def mock_click_prompt(prompt, **kwargs):
+        prompts.append((prompt, kwargs))
+        return "otpauth://totp/Example:user?secret=JBSWY3DPEHPK3PXP"
+
+    monkeypatch.setattr(oath_module, "click_prompt", mock_click_prompt)
+
+    runner = CliRunner()
+    runner.invoke(
+        oath_module.uri,
+        [],
+        obj={"fips_unready": False, "session": None},
+        catch_exceptions=True,
+    )
+
+    assert len(prompts) == 1
+    prompt_str, kwargs = prompts[0]
+    assert "Enter an OATH URI" in prompt_str
+    assert kwargs.get("hide_input") is True
+
+
 def test_secret_key_prompts_hide_input(monkeypatch):
     import ykman._cli.oath as oath_module
     import ykman._cli.hsmauth as hsmauth_module
