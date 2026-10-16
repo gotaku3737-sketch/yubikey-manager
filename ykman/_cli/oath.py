@@ -712,6 +712,7 @@ def import_pskc(ctx, import_file, touch, force, password, remember):
             )
             pskc.encryption.derive_key(passphrase)
         else:
+            # Mask secret key prompt to prevent echoing in cleartext
             key = click_prompt(
                 "Enter pre-shared key (32 char hex) to decrypt PSKC file",
                 hide_input=True,
