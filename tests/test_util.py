@@ -274,6 +274,8 @@ def test_secret_key_prompts_hide_input(monkeypatch):
             return "abba"
         if "enc key" in prompt.lower():
             return "01020304050607080102030405060708"
+        if "oath uri" in prompt.lower():
+            return "otpauth://totp/Example:user?secret=JBSWY3DPEHPK3PXP"
         return "dummy"
 
     monkeypatch.setattr(oath_module, "click_prompt", mock_click_prompt)
@@ -299,10 +301,21 @@ def test_secret_key_prompts_hide_input(monkeypatch):
         catch_exceptions=False,
     )
 
-    # Verify hide_input=True was passed to click_prompt for both
-    assert len(prompts) >= 2
+    # Test oath uri interactive prompt
+    runner.invoke(
+        oath_module.uri,
+        [],
+        obj={"fips_unready": False},
+    )
+
+    # Verify hide_input=True was passed to click_prompt for all
+    assert len(prompts) >= 3
     for prompt_str, kwargs in prompts:
-        if "secret key" in prompt_str.lower() or "enc key" in prompt_str.lower():
+        if (
+            "secret key" in prompt_str.lower()
+            or "enc key" in prompt_str.lower()
+            or "oath uri" in prompt_str.lower()
+        ):
             assert kwargs.get("hide_input") is True
 
 
