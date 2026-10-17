@@ -201,6 +201,25 @@ def test_parse_private_key_encrypted_pem_raises_invalid_password_error():
         parse_private_key(data, b"wrong-password")
 
 
+def test_parse_private_key_encrypted_pkcs8_raises_invalid_password_error():
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.backends import default_backend
+
+    key = rsa.generate_private_key(65537, 2048, default_backend())
+    pem = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.BestAvailableEncryption(b"secret"),
+    )
+
+    with pytest.raises(InvalidPasswordError):
+        parse_private_key(pem, None)
+
+    with pytest.raises(InvalidPasswordError):
+        parse_private_key(pem, b"wrong-password")
+
+
 @pytest.mark.parametrize(
     ("value", "expected"),
     [
