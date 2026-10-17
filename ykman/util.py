@@ -82,7 +82,7 @@ def parse_private_key(data, password):
         except (TypeError, ValueError) as e:
             # Cryptography raises TypeError or ValueError if decryption
             # fails / password missing.
-            if encrypted or password is not None:
+            if encrypted or password is not None or isinstance(e, TypeError):
                 raise InvalidPasswordError(e)
             logger.debug("Failed to parse PEM private key ", exc_info=True)
         except Exception:
