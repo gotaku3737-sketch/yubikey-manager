@@ -203,3 +203,55 @@ def test_import_pskc_preshared_key_prompt_hidden_input(monkeypatch, tmp_path):
         "Enter pre-shared key (32 char hex) to decrypt PSKC file",
         hide_input=True,
     )
+
+
+def test_add_account_pskc_preshared_key_prompt_hidden_input(monkeypatch, tmp_path):
+    from unittest.mock import MagicMock
+    from click.testing import CliRunner
+    from ykman._cli.__main__ import cli
+
+    pskc_file = tmp_path / "export.pskc"
+    mock_click_prompt = MagicMock(return_value="00112233445566778899aabbccddeeff")
+
+    mock_session = MagicMock()
+    mock_session.locked = False
+    mock_session.device_id = "test_device_id"
+    mock_session.version = (5, 4, 0)
+    mock_session.list_credentials.return_value = []
+
+    mock_info = MagicMock()
+    mock_info.serial = 123456
+    mock_info.fips_capable = ()
+    mock_info.fips_approved = ()
+
+    mock_dev = MagicMock()
+    mock_conn = MagicMock()
+    mock_dev.open_connection.return_value = mock_conn
+
+    monkeypatch.setattr("ykman._cli.oath.click_prompt", mock_click_prompt)
+    monkeypatch.setattr("ykman._cli.__main__.require_device", lambda conn, serial: (mock_dev, mock_info))
+    monkeypatch.setattr("ykman._cli.oath.OathSession", lambda conn, scp: mock_session)
+
+    runner = CliRunner()
+    res = runner.invoke(
+        cli,
+        [
+            "oath",
+            "accounts",
+            "add",
+            "test_user",
+            "GEZDGNBVGY3TQOJQ",
+            "-O",
+            str(pskc_file),
+            "--pskc-key",
+            "-",
+            "-f",
+        ],
+    )
+
+    assert res.exit_code == 0
+    mock_click_prompt.assert_called_once_with(
+        "Enter pre-shared key (hex) to encrypt PSKC file",
+        hide_input=True,
+        confirmation_prompt=True,
+    )
