@@ -260,10 +260,10 @@ def click_prompt(prompt, err=True, **kwargs):
     """
     logger.debug(f"Input requested ({prompt})")
     if not sys.stdin.isatty():  # Piped from stdin, see if there is data
-        logger.debug("TTY detected, reading line from stdin...")
+        logger.debug("Non-TTY detected, reading line from stdin...")
         line = sys.stdin.readline()
         if line:
-            return line.rstrip("\n")
+            return line.rstrip("\r\n")
         logger.debug("No data available on stdin")
 
     # No piped data, use standard prompt
