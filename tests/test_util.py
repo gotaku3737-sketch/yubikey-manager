@@ -382,7 +382,7 @@ def test_scp_cred_file_mode_on_error(tmp_path):
         assert stat.S_IMODE(mode) == 0o600
 
 
-def test_openpgp_import_certificate_file_mode_on_error(tmp_path):
+def test_openpgp_import_certificate_preserves_readonly_file_mode(tmp_path):
     import os
     import stat
     from click.testing import CliRunner
@@ -391,7 +391,7 @@ def test_openpgp_import_certificate_file_mode_on_error(tmp_path):
     cert_file = tmp_path / "cert.pem"
     cert_file.write_text("dummy certificate content")
     if os.name == "posix":
-        os.chmod(cert_file, 0o644)
+        os.chmod(cert_file, 0o444)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -403,7 +403,7 @@ def test_openpgp_import_certificate_file_mode_on_error(tmp_path):
     assert result.exit_code != 0
     if os.name == "posix":
         mode = cert_file.stat().st_mode
-        assert stat.S_IMODE(mode) == 0o600
+        assert stat.S_IMODE(mode) == 0o444
 
 
 def test_oath_import_pskc_file_mode_on_error(tmp_path):
@@ -475,7 +475,7 @@ def test_piv_import_key_file_mode_on_error(tmp_path):
         assert stat.S_IMODE(mode) == 0o600
 
 
-def test_piv_import_certificate_file_mode_on_error(tmp_path):
+def test_piv_import_certificate_preserves_readonly_file_mode(tmp_path):
     import os
     import stat
     from click.testing import CliRunner
@@ -484,7 +484,7 @@ def test_piv_import_certificate_file_mode_on_error(tmp_path):
     cert_file = tmp_path / "cert.pem"
     cert_file.write_text("dummy cert material")
     if os.name == "posix":
-        os.chmod(cert_file, 0o644)
+        os.chmod(cert_file, 0o444)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -496,7 +496,7 @@ def test_piv_import_certificate_file_mode_on_error(tmp_path):
     assert result.exit_code != 0
     if os.name == "posix":
         mode = cert_file.stat().st_mode
-        assert stat.S_IMODE(mode) == 0o600
+        assert stat.S_IMODE(mode) == 0o444
 
 
 def test_openpgp_import_key_file_mode_on_error(tmp_path):

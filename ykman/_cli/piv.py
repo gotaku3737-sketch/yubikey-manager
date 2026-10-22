@@ -1036,8 +1036,6 @@ def import_certificate(
     SLOT            PIV slot of the certificate
     CERTIFICATE     file containing the certificate (use '-' to use stdin)
     """
-    ensure_restrictive_file_mode(cert)
-
     session = ctx.obj["session"]
 
     data = cert.read()
