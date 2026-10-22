@@ -280,6 +280,17 @@ def test_ensure_restrictive_file_mode(tmp_path):
         assert stat.S_IMODE(mode) == 0o600
 
 
+def test_click_prompt_piped_crlf(monkeypatch):
+    import sys
+    from ykman._cli.util import click_prompt
+
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: False)
+    monkeypatch.setattr(sys.stdin, "readline", lambda: "secret_pass\r\n")
+
+    res = click_prompt("Enter password")
+    assert res == "secret_pass"
+
+
 def test_secret_key_prompts_hide_input(monkeypatch):
     import ykman._cli.oath as oath_module
     import ykman._cli.hsmauth as hsmauth_module
