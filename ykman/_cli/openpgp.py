@@ -44,7 +44,7 @@ from yubikit.openpgp import (
 )
 
 from ..openpgp import get_key_info, get_openpgp_info, safe_reset
-from ..util import parse_certificates, parse_private_key
+from ..util import InvalidPasswordError, parse_certificates, parse_private_key
 from .util import (
     CliFail,
     EnumChoice,
@@ -486,10 +486,11 @@ def set_touch(ctx, key, policy, admin_pin, force):
 
 @keys.command("import")
 @click.option("-a", "--admin-pin", help="Admin PIN for OpenPGP")
+@click.option("-p", "--password", help="password used to decrypt the private key")
 @click.pass_context
 @click.argument("key", metavar="KEY", type=EnumChoice(KEY_REF))
 @click.argument("private-key", type=click.File("rb"), metavar="PRIVATE-KEY")
-def import_key(ctx, key, private_key, admin_pin):
+def import_key(ctx, key, private_key, admin_pin, password):
     """
     Import a private key for OpenPGP attestation.
 
@@ -509,15 +510,37 @@ def import_key(ctx, key, private_key, admin_pin):
     if key != KEY_REF.ATT:
         ctx.fail("Importing keys is only supported for the Attestation slot.")
 
+    data = private_key.read()
+
+    while True:
+        if password is not None:
+            password = password.encode()
+        try:
+            parsed_key = parse_private_key(data, password)
+        except InvalidPasswordError:
+            logger.debug("Error parsing key", exc_info=True)
+            if password is None:
+                password = click_prompt(
+                    "Enter password to decrypt key",
+                    default="",
+                    hide_input=True,
+                    show_default=False,
+                )
+                continue
+            else:
+                password = None
+                click.echo("Wrong password.")
+                continue
+        except Exception:
+            raise CliFail("Failed to parse private key.")
+        break
+
     if admin_pin is None:
         admin_pin = click_prompt("Enter Admin PIN", hide_input=True)
-    try:
-        private_key = parse_private_key(private_key.read(), password=None)
-    except Exception:
-        raise CliFail("Failed to parse private key.")
+
     try:
         session.verify_admin(admin_pin)
-        session.put_key(key, private_key)
+        session.put_key(key, parsed_key)
         click.echo(f"Private key imported for slot {key.name}.")
     except Exception:
         raise CliFail("Failed to import attestation key.")
