@@ -475,6 +475,51 @@ def test_piv_import_key_file_mode_on_error(tmp_path):
         assert stat.S_IMODE(mode) == 0o600
 
 
+def test_openpgp_import_key_encrypted(tmp_path):
+    from click.testing import CliRunner
+    from unittest.mock import MagicMock
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.backends import default_backend
+    from ykman._cli.openpgp import import_key
+
+    key = rsa.generate_private_key(65537, 2048, default_backend())
+    password = b"secret-pass"
+    pem = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.BestAvailableEncryption(password),
+    )
+
+    key_file = tmp_path / "enc_key.pem"
+    key_file.write_bytes(pem)
+
+    mock_session = MagicMock()
+
+    runner = CliRunner()
+    result = runner.invoke(
+        import_key,
+        ["att", str(key_file), "-a", "12345678", "-p", "secret-pass"],
+        obj={"session": mock_session},
+    )
+
+    assert result.exit_code == 0
+    assert "Private key imported for slot ATT" in result.output
+    mock_session.verify_admin.assert_called_once_with("12345678")
+    mock_session.put_key.assert_called_once()
+
+    mock_session.reset_mock()
+    result_prompt = runner.invoke(
+        import_key,
+        ["att", str(key_file), "-a", "12345678"],
+        input="secret-pass\n",
+        obj={"session": mock_session},
+    )
+
+    assert result_prompt.exit_code == 0
+    assert "Private key imported for slot ATT" in result_prompt.output
+
+
 def test_piv_import_certificate_file_mode_on_error(tmp_path):
     import os
     import stat
