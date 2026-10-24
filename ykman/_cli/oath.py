@@ -718,9 +718,14 @@ def import_pskc(ctx, import_file, touch, force, password, remember):
                 hide_input=True,
             )
             try:
-                pskc.encryption.key = bytes.fromhex(key)
+                pskc_key = bytes.fromhex(key)
+                if len(pskc_key) != 16:
+                    raise ValueError
+                pskc.encryption.key = pskc_key
             except ValueError:
-                raise CliFail("Invalid pre-shared key: must be valid hexadecimal.")
+                raise CliFail(
+                    "Invalid pre-shared key: must be 16 bytes (32 hex characters)."
+                )
 
     _init_session(ctx, password, remember)
 
