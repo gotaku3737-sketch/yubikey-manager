@@ -205,6 +205,49 @@ def test_import_pskc_preshared_key_prompt_hidden_input(monkeypatch, tmp_path):
     )
 
 
+def test_import_pskc_invalid_preshared_key_length(monkeypatch, tmp_path):
+    from unittest.mock import MagicMock
+    from click.testing import CliRunner
+    from ykman._cli.__main__ import cli
+
+    pskc_file = tmp_path / "encrypted.pskc"
+    pskc_file.write_bytes(b"dummy_pskc_content")
+
+    mock_pskc = MagicMock()
+    mock_pskc.encryption.is_encrypted = True
+    mock_pskc.encryption.derivation.algorithm = None
+
+    # Invalid pre-shared key length (e.g. 10 hex characters = 5 bytes instead of 16 bytes)
+    mock_click_prompt = MagicMock(return_value="0011223344")
+
+    mock_session = MagicMock()
+    mock_session.locked = False
+    mock_session.device_id = "test_device_id"
+    mock_session.version = (5, 4, 0)
+
+    mock_info = MagicMock()
+    mock_info.fips_capable = ()
+    mock_info.fips_approved = ()
+
+    mock_dev = MagicMock()
+    mock_conn = MagicMock()
+    mock_dev.open_connection.return_value = mock_conn
+
+    monkeypatch.setattr("ykman._cli.oath.PSKC", lambda f: mock_pskc)
+    monkeypatch.setattr("ykman._cli.oath.click_prompt", mock_click_prompt)
+    monkeypatch.setattr("ykman._cli.__main__.require_device", lambda conn, serial: (mock_dev, mock_info))
+    monkeypatch.setattr("ykman._cli.oath.OathSession", lambda conn, scp: mock_session)
+
+    runner = CliRunner()
+    res = runner.invoke(
+        cli,
+        ["oath", "accounts", "import", str(pskc_file)],
+    )
+
+    assert res.exit_code != 0
+    assert "Invalid pre-shared key: must be 16 bytes (32 hex characters)." in (res.output or str(res.exception))
+
+
 def test_add_account_pskc_preshared_key_prompt_hidden_input(monkeypatch, tmp_path):
     from unittest.mock import MagicMock
     from click.testing import CliRunner
