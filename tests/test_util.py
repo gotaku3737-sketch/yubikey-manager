@@ -263,6 +263,18 @@ def test_form_factor_from_code_rejects_invalid_type():
         FORM_FACTOR.from_code("im a string")
 
 
+def test_click_prompt_piped_crlf(monkeypatch):
+    import io
+    from ykman._cli.util import click_prompt
+
+    mock_stdin = io.StringIO("secret_password_123\r\n")
+    monkeypatch.setattr(mock_stdin, "isatty", lambda: False)
+    monkeypatch.setattr("sys.stdin", mock_stdin)
+
+    result = click_prompt("Enter PIN")
+    assert result == "secret_password_123"
+
+
 def test_ensure_restrictive_file_mode(tmp_path):
     import os
     import stat
