@@ -366,6 +366,24 @@ class TestPskc:
         content = pskc_file.read_text()
         assert "EncryptedValue" in content or "CipherData" in content
 
+    def test_export_with_passphrase_prompt(self, accounts_cli, tmp_path):
+        """Test exporting a credential encrypted with a passphrase via prompt."""
+        pskc_file = tmp_path / "encrypted_pass_prompt.pskc"
+        accounts_cli(
+            "add",
+            "passphrase-prompt-test",
+            "GEZDGNBVGY3TQOJQ",
+            "-O",
+            str(pskc_file),
+            "--pskc-passphrase",
+            "-",
+            "-f",
+            input="testpassword123\ntestpassword123\n",
+        )
+        assert pskc_file.exists()
+        content = pskc_file.read_text()
+        assert "EncryptedValue" in content or "CipherData" in content
+
     def test_export_with_preshared_key(self, accounts_cli, tmp_path):
         """Test exporting a credential encrypted with a pre-shared key."""
         pskc_file = tmp_path / "encrypted_key.pskc"
