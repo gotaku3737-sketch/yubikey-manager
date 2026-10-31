@@ -672,8 +672,10 @@ def uri(ctx, data, touch, force, password, remember):
             try:
                 data = CredentialData.parse_uri(uri)
                 break
-            except Exception as e:
-                click.echo(e)
+            except Exception:
+                logger.debug("Failed to parse OATH URI", exc_info=True)
+                # Avoid echoing exception message as it may leak sensitive parameters
+                click.echo("Invalid OATH URI.")
 
     # Steam is a special case where we allow the otpauth
     # URI to contain a 'digits' value of '5'.

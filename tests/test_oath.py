@@ -255,3 +255,54 @@ def test_add_account_pskc_preshared_key_prompt_hidden_input(monkeypatch, tmp_pat
         hide_input=True,
         confirmation_prompt=True,
     )
+
+
+def test_uri_prompt_invalid_does_not_leak_secret(monkeypatch):
+    from unittest.mock import MagicMock
+    from click.testing import CliRunner
+    from ykman._cli.oath import oath
+    from ykman._cli.util import YkmanContextObject
+
+    inputs = [
+        "otpauth://totp/TestAccount?secret=SUPERSECRETKEY123&invalid=param",
+        "otpauth://totp/ValidAccount?secret=GEZDGNBVGY3TQOJQ",
+    ]
+
+    mock_click_prompt = MagicMock(side_effect=inputs)
+
+    mock_session = MagicMock()
+    mock_session.locked = False
+    mock_session.device_id = "test_device_id"
+    mock_session.version = (5, 4, 0)
+    mock_session.list_credentials.return_value = []
+
+    mock_info = MagicMock()
+    mock_info.fips_capable = ()
+    mock_info.fips_approved = ()
+
+    runner = CliRunner()
+    mock_dev = MagicMock()
+    mock_conn = MagicMock()
+    mock_dev.open_connection.return_value = mock_conn
+
+    ctx_obj = YkmanContextObject()
+    ctx_obj.add_resolver("device", lambda: mock_dev)
+    ctx_obj.add_resolver("info", lambda: mock_info)
+    ctx_obj.add_resolver("session", lambda: mock_session)
+    ctx_obj.add_resolver("oath_keys", lambda: MagicMock())
+    ctx_obj.add_resolver("fips_unready", lambda: False)
+    ctx_obj.add_resolver("no_scp", lambda: False)
+    ctx_obj.resolve()
+
+    monkeypatch.setattr("ykman._cli.oath.click_prompt", mock_click_prompt)
+    monkeypatch.setattr("ykman._cli.oath.OathSession", lambda conn, scp: mock_session)
+
+    res = runner.invoke(
+        oath,
+        ["accounts", "uri"],
+        obj=ctx_obj,
+    )
+
+    assert res.exit_code == 0
+    assert "Invalid OATH URI." in res.output
+    assert "SUPERSECRETKEY123" not in res.output
