@@ -673,6 +673,7 @@ def uri(ctx, data, touch, force, password, remember):
                 data = CredentialData.parse_uri(uri)
                 break
             except Exception:
+                logger.debug("Failed to parse OATH URI", exc_info=True)
                 # Avoid echoing exception message as it may leak sensitive parameters
                 click.echo("Invalid OATH URI.")
 
