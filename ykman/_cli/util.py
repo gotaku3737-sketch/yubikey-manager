@@ -263,7 +263,7 @@ def click_prompt(prompt, err=True, **kwargs):
         logger.debug("TTY detected, reading line from stdin...")
         line = sys.stdin.readline()
         if line:
-            return line.rstrip("\n")
+            return line.rstrip("\r\n")
         logger.debug("No data available on stdin")
 
     # No piped data, use standard prompt
